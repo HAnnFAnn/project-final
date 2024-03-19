@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  app:
+    container_name: jira-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jira
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - nginx
+    env_file:
+      - secret-data.env
+    networks:
+      - backend
+
+  db:
+    container_name: jira-db
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    env_file:
+      - secret-data.env
+    networks:
+      - backend
+
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge

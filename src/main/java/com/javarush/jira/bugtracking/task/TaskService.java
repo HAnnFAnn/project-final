@@ -19,13 +19,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.javarush.jira.bugtracking.ObjectType.TASK;
 import static com.javarush.jira.bugtracking.task.TaskUtil.fillExtraFields;
 import static com.javarush.jira.bugtracking.task.TaskUtil.makeActivity;
 import static com.javarush.jira.ref.ReferenceService.getRefTo;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +38,50 @@ public class TaskService {
     static final String CANNOT_ASSIGN = "Cannot assign as %s to task with status=%s";
     static final String CANNOT_UN_ASSIGN = "Cannot unassign as %s from task with status=%s";
 
+    static final String ACTIVITIES_NOT_FOUND = "Activities not found for task %s";
+    static final String START_END_ACTIVITIES_NOT_FOUND = "Start or end Activity not found for task %s";
+
+    static final String STATUS_CODE_IN_PROGRESS = "in_progress";
+    static final String STATUS_CODE_READY_FOR_REVIEW = "ready_for_review";
+    static final String STATUS_CODE_DONE = "done";
+
     private final Handlers.TaskExtHandler handler;
     private final Handlers.ActivityHandler activityHandler;
     private final TaskFullMapper fullMapper;
     private final SprintRepository sprintRepository;
     private final TaskExtMapper extMapper;
     private final UserBelongRepository userBelongRepository;
+
+    @Transactional(readOnly = true)
+    public Duration getDevelopmentTimeDuration(Task task) {
+        return getActivityTimeDuration(STATUS_CODE_IN_PROGRESS, STATUS_CODE_READY_FOR_REVIEW, task);
+    }
+
+    @Transactional(readOnly = true)
+    public Duration getTestingTimeDuration(Task task) {
+        return getActivityTimeDuration(STATUS_CODE_READY_FOR_REVIEW, STATUS_CODE_DONE, task);
+    }
+
+    private Duration getActivityTimeDuration(String startStatusCode, String endStatusCode, Task task) {
+        Map<String, Activity> activityMap = createActivityMap(task);
+        Activity before = activityMap.get(startStatusCode);
+        Activity after = activityMap.get(endStatusCode);
+        if (before == null || after == null) {
+            throw new NotFoundException(String.format(START_END_ACTIVITIES_NOT_FOUND, task.getId()));
+        }
+        assert before.getUpdated() != null;
+        return Duration.between(before.getUpdated(), after.getUpdated());
+    }
+
+    private Map<String, Activity> createActivityMap(Task task) {
+        List<Activity> activities = task.getActivities();
+        if (isEmpty(activities)) {
+            throw new NotFoundException(String.format(ACTIVITIES_NOT_FOUND, task.getId()));
+        }
+        return activities
+                .stream()
+                .collect(Collectors.toMap(Activity::getStatusCode, Function.identity()));
+    }
 
     @Transactional
     public void changeStatus(long taskId, String statusCode) {
