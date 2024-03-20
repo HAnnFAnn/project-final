@@ -21,7 +21,6 @@
         <mapstruct.version>1.5.3.Final</mapstruct.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.test.skip>true</maven.test.skip>
     </properties>
 
     <dependencies>
@@ -147,8 +146,8 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
-    </dependency>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -226,9 +225,9 @@
             </build>
         </profile>
         <profile>
-            <id>local</id>
+            <id>test</id>
             <properties>
-                <spring.profiles.active>local</spring.profiles.active>
+                <spring.profiles.active>test</spring.profiles.active>
             </properties>
             <build>
                 <plugins>
