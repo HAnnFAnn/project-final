@@ -1,8 +1,4 @@
 spring.cache.type: none
 spring:
-  liquibase:
-    change-log: changelog-test.sql
   init:
     mode: always
-  datasource:
-    url: jdbc:h2:mem:test;NON_KEYWORDS=VALUE

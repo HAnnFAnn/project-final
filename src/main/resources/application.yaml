@@ -29,10 +29,6 @@ spring:
     url: jdbc:postgresql://jira-db:5432/jira
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-#  username: jira
-#  password: JiraRush
-  liquibase:
-    changeLog: "classpath:db/changelog.sql"
 
   # Jackson Fields Serialization
   jackson:
